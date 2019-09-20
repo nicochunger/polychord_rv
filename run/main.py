@@ -59,11 +59,15 @@ def runpoly(configfile, nlive=None, nplanets=None, modelargs={}, **kwargs):
     else:
         settings.nlive = nlive
 
+    # Define fileroot name (identifies this specific run)
     fileroot = rundict['target']+'_'+rundict['runid']
     if rundict['comment'] != '':
         fileroot += '_'+rundict['comment']
 
-    # add date
+    # Add number of planets, live points, sampler and date
+    fileroot += '_k{}'.format(mymodel.nplanets)
+    fileroot += '_{}nlive'.format(settings.nlive)
+    fileroot += '_polychord'
     fileroot += '_'+isodate
 
     settings.file_root = fileroot
@@ -71,11 +75,12 @@ def runpoly(configfile, nlive=None, nplanets=None, modelargs={}, **kwargs):
     settings.num_repeats = ndim * 5
     settings.feedback = 1
     settings.precision_criterion = 0.01
-    # base directory
+    # Base directory
     if rank == 0:
-        base_dir = os.path.join(HOME, 'ExP', rundict['target'], 'polychains')
-        if not os.path.isdir(base_dir):
-            os.makedirs(base_dir)
+        base_dir = os.path.join(HOME, 'ExP', rundict['target'], fileroot, 'polychains')
+        if rank == 0:
+            if not os.path.isdir(base_dir):
+                os.makedirs(base_dir)
         settings.base_dir = os.path.join(base_dir)
 
     # Initialise clocks
@@ -91,6 +96,9 @@ def runpoly(configfile, nlive=None, nplanets=None, modelargs={}, **kwargs):
     output.target = rundict['target']
     output.runid = rundict['runid']
     output.comment = rundict.get('comment', '')
+    output.nplanets = mymodel.nplanets
+    output.nlive = settings.nlive
+    output.isodate = isodate
 
     if output.comment != '':
         output.comment = '_'+output.comment
@@ -112,13 +120,14 @@ def dump2pickle_poly(output, savedir=None):
     pickledict = {'target': output.target,
                   'runid': output.runid,
                   'comm': output.comment,
+                  'nplanets': output.nplanets,
                   'nlive': output.nlive,
                   'sampler': 'polychord',
-                  'date': datetime.datetime.today().isoformat()}
+                  'date': output.isodate}
 
     if savedir is None:
         pickledir = os.path.join(os.getenv('HOME'), 'ExP',
-                                 output.target, 'samplers')
+                                 output.target, output.file_root)
     else:
         pickledir = savedir
 
@@ -127,7 +136,7 @@ def dump2pickle_poly(output, savedir=None):
         os.makedirs(pickledir)
 
     f = open(os.path.join(pickledir,
-                          '{target}_{runid}{comm}_{nlive}live_'
+                          '{target}_{runid}{comm}_k{nplanets}_{nlive}live_'
                           '{sampler}_{date}.dat'.format(**pickledict)), 'wb')
 
     pickle.dump(output, f)
