@@ -32,6 +32,7 @@ def read_config(configfile, nplanets=None):
     else:
         # Create dicts for each planet
         fpdict = dict(input_dict['planet1'])
+        del input_dict['planet1']
         for i in range(1, nplanets+1):
             try:
                 # Try deleting it first to avoid repeats
