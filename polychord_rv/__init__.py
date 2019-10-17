@@ -28,13 +28,13 @@ def runpoly(configfile, nlive=None, nplanets=None, modelargs={}, **kwargs):
     parnames = list(priordict.keys())
 
     # Import model module
-    models_path = os.path.join(os.getenv('HOME'), 'run/targets/{target}/models'.format(**rundict))
+    models_path = os.path.join(os.getenv('HOME'), 'run/targets/{target}/models/{runid}'.format(**rundict))
     modulename = 'model_{target}_{runid}'.format(**rundict)
     sys.path.insert(0, models_path)
     mod = importlib.import_module(modulename) # modulename, models_path)
 
     # Instantiate model class (pass additional arguments)
-    mymodel = mod.Model(fixeddict, datadict, priordict, **modelargs)
+    mymodel = mod.Model(fixeddict, datadict, priordict, rundict, **modelargs)
 
     # Function to convert from hypercube to physical parameter space
     def prior(hypercube):
