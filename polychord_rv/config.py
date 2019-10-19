@@ -40,6 +40,7 @@ def read_config(configfile, nplanets=None):
             except:
                 pass
             input_dict.update({'planet{}'.format(i): dict(fpdict)})
+        rundict['nplanets'] = nplanets
 
     # Create prior instances
     priordict = prior_constructor(input_dict, {})
