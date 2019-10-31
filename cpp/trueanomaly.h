@@ -1,6 +1,6 @@
 #ifndef TRUEANOMALY_H
 #define TREUANOMALY_H
 
-int trueanomaly(float *M, int n, float ecc, float *nu, int niterationmax, float tol);
+int trueanomaly(double *M, int n, double ecc, double *nu, int niterationmax, double tol);
 
 #endif

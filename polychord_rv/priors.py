@@ -8,6 +8,7 @@ from math import *
 from scipy import stats, interpolate
 
 from scipy.stats import rv_continuous
+from scipy.special import ndtri
 
 # Number of points to sample CDF and get PPF from inversion
 N = 1e4
@@ -42,7 +43,7 @@ class uniform_gen(rv_continuous):
         return stats.uniform.cdf(x, loc=xmin, scale=xmax - xmin)
 
     def ppf(self, q, xmin, xmax):
-        #return ppf_uniform(q, xmin, xmax)
+        return ppf_uniform(q, xmin, xmax)
         return xmin + (xmax - xmin)*q
         #return stats.uniform.ppf(q, loc=xmin, scale=xmax - xmin)
 
@@ -55,7 +56,7 @@ class uniform(uniform_gen):
         warnings.warn("The uniform class was renamed uniform_gen",
                       DeprecationWarning)
         super(uniform, self).__init__(*args, **kwargs)
-        
+    
 
 class jeffreys_gen(rv_continuous):
 
@@ -74,7 +75,7 @@ class jeffreys_gen(rv_continuous):
         cdf = n.where((x < xmax), cdf, 1.0)
         return cdf
 
-    def _ppf(self, q, xmin, xmax):
+    def ppf(self, q, xmin, xmax):
         return xmin * (float(xmax)/xmin) ** q
         # dx = (xmax - xmin)*step
         # x = n.arange(xmin, xmax + dx, dx)
@@ -111,7 +112,8 @@ class modjeff_gen(rv_continuous):
         cdf = n.where(x < xmax, cdf, 1.0)
         return cdf
 
-    def _ppf(self, q, x0, xmax):
+    def ppf(self, q, x0, xmax):
+        return ppf_modjeff(q, x0, xmax)
         return x0*((1+float(xmax)/x0) ** q) - x0
         # dx = xmax*step
         # x = n.arange(0, xmax + dx, dx)
@@ -119,6 +121,8 @@ class modjeff_gen(rv_continuous):
         # # Interpolate the _inverse_ CDF
         # return interpolate.interp1d(cdf, x)(q)
 
+def ppf_modjeff(q, x0, xmax):
+    return x0*((1+float(xmax)/x0) ** q) - x0
 
 class uniformfreq_gen(rv_continuous):
 
@@ -266,7 +270,7 @@ class truncnormU_gen(rv_continuous):
         cdf = n.where((x < xmax), cdf, 1.0)
         return cdf
 
-    def _ppf(self, q, mu, sigma, xmin, xmax):
+    def ppf(self, q, mu, sigma, xmin, xmax):
         dx = (xmax - xmin)*step
         x = n.arange(xmin, xmax + dx, dx)
         cdf = self._cdf(x, mu, sigma, xmin, xmax)
@@ -292,7 +296,7 @@ class truncrayleigh_gen(rv_continuous):
         cdf = n.where((x < xmax), cdf, 1.0)
         return cdf
 
-    def _ppf(self, q, sigma, xmax):
+    def ppf(self, q, sigma, xmax):
         A = 1 - n.exp(-xmax**2/(2*sigma**2))
         ppf = n.sqrt(-2*sigma**2*n.log(1-(q*A)))
         return ppf

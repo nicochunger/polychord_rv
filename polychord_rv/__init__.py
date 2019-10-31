@@ -95,17 +95,21 @@ def runpoly(configfile, nlive=None, nplanets=None, modelargs={}, **kwargs):
     settings.base_dir = base_dir
 
     # Initialise clocks
-    ti = time.clock()
-    tw = time.time()
+    ti = time.process_time()
 
     # Run PolyChord
     output = polychord.run_polychord(loglike, ndim, nderived, settings, prior)
 
-    # Assign additional parameters to output
+    # Cleanup of parameter names
     paramnames = [(x, x) for x in parnames]
     output.make_paramnames_files(paramnames)
-    output.runtime = time.clock() - ti
-    output.walltime = time.time() - tw
+    parnames.insert(0, 'loglike')
+    parnames.insert(0, 'weight')
+    old_cols = output.samples.columns.values.tolist()
+    output.samples.rename(columns=dict(zip(old_cols, parnames)), inplace=True)
+
+    # Assign additional parameters to output
+    output.runtime = time.process_time() - ti
     output.target = rundict['target']
     output.runid = rundict['runid']
     output.comment = rundict.get('comment', '')
@@ -118,12 +122,10 @@ def runpoly(configfile, nlive=None, nplanets=None, modelargs={}, **kwargs):
         output.comment = '_'+output.comment
 
     run_time = datetime.timedelta(seconds=int(output.runtime))
-    wall_time = datetime.timedelta(seconds=int(output.walltime))
 
     if rank == 0:
         # Print run time
         print('\nTotal run time was: {}'.format(run_time))
-        print('Total wall time was: {}'.format(wall_time))
 
         # Save output as pickle file
         dump2pickle_poly(output)
