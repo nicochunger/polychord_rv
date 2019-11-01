@@ -97,8 +97,13 @@ def runpoly(configfile, nlive=None, nplanets=None, modelargs={}, **kwargs):
     # Initialise clocks
     ti = time.process_time()
 
-    # Run PolyChord
+    # ----- Run PolyChord ------
     output = polychord.run_polychord(loglike, ndim, nderived, settings, prior)
+    # --------------------------
+
+    # Stop clock
+    tf = time.process_time()
+    run_time = datetime.timedelta(seconds=tf-ti)
 
     # Cleanup of parameter names
     paramnames = [(x, x) for x in parnames]
@@ -109,19 +114,18 @@ def runpoly(configfile, nlive=None, nplanets=None, modelargs={}, **kwargs):
     output.samples.rename(columns=dict(zip(old_cols, parnames)), inplace=True)
 
     # Assign additional parameters to output
-    output.runtime = time.process_time() - ti
+    output.runtime = run_time
     output.target = rundict['target']
     output.runid = rundict['runid']
     output.comment = rundict.get('comment', '')
     output.nplanets = mymodel.nplanets
     output.nlive = settings.nlive
+    output.nrepeats = settings.num_repeats
     output.isodate = isodate
     output.ncores = size
 
     if output.comment != '':
         output.comment = '_'+output.comment
-
-    run_time = datetime.timedelta(seconds=int(output.runtime))
 
     if rank == 0:
         # Print run time
