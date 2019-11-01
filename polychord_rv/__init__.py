@@ -86,12 +86,13 @@ def runpoly(configfile, nlive=None, nplanets=None, modelargs={}, **kwargs):
     settings.feedback = 1
     settings.precision_criterion = 0.01
     # Base directory
+    ref_dir = os.path.join('ExP', rundict['target'], rundict['runid'], fileroot, 'polychains')
     if 'spectro' in HOME:
         # If it's runing in cluster -> save in scratch folder
-        base_dir = os.path.join('/scratch/nunger', 'ExP', rundict['target'], fileroot, 'polychains')
+        base_dir = os.path.join('/scratch/nunger', ref_dir)
     else:
         # Running locally
-        base_dir = os.path.join(HOME, 'ExP', rundict['target'], fileroot, 'polychains')
+        base_dir = os.path.join(HOME, ref_dir)
     settings.base_dir = base_dir
 
     # Initialise clocks
