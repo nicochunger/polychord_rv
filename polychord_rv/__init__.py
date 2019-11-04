@@ -5,16 +5,16 @@ import importlib
 import datetime
 import time
 from shutil import copy
+
+# MPI imports
 from mpi4py import MPI
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 size = comm.Get_size()
 
+# PolyChord imports
 import pypolychord as polychord
 import pypolychord.settings as polysettings
-
-# import PyPolyChord as polychord
-# import PyPolyChord.settings as polysettings
 
 from .config import read_config
 
@@ -151,18 +151,17 @@ def dump2pickle_poly(output, savedir=None):
         return
 
     if savedir is None:
-        # Save directory is parent of base dir
+        # Save directory in parent of base dir
         pickledir = os.path.join(output.base_dir, '..')
     else:
         # Unless specified otherwhise
         pickledir = savedir
 
-    # Check if path exists; create if not
-    if not os.path.isdir(pickledir):
-        os.makedirs(pickledir)
+    # Create directory if it doesn't exist.
+    os.makedirs(pickledir, exist_ok=True)
 
-    f = open(os.path.join(pickledir, output.file_root+'.dat'), 'wb')
+    full_path = os.path.join(pickledir, output.file_root+'.dat')
+    with open(full_path, 'wb') as f:
+        pickle.dump(output, f)
 
-    pickle.dump(output, f)
-    f.close()
     return
