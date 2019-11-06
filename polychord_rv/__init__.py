@@ -24,7 +24,7 @@ HOME = os.getenv('HOME')
 def runpoly(configfile, nlive=None, nplanets=None, modelargs={}, **kwargs):
 
     # Read dictionaries from configuration file
-    rundict, datadict, priordict, fixeddict = read_config(configfile, nplanets)
+    rundict, datadict, priordict, fixeddict, priors = read_config(configfile, nplanets)
     parnames = list(priordict.keys())
 
     # Import model module
@@ -34,7 +34,7 @@ def runpoly(configfile, nlive=None, nplanets=None, modelargs={}, **kwargs):
     mod = importlib.import_module(modulename) # modulename, models_path)
 
     # Instantiate model class (pass additional arguments)
-    mymodel = mod.Model(fixeddict, datadict, priordict, rundict, **modelargs)
+    mymodel = mod.Model(fixeddict, datadict, priordict, **modelargs)
 
     # Function to convert from hypercube to physical parameter space
     def prior(hypercube):
@@ -124,9 +124,11 @@ def runpoly(configfile, nlive=None, nplanets=None, modelargs={}, **kwargs):
     output.nrepeats = settings.num_repeats
     output.isodate = isodate
     output.ncores = size
-
-    if output.comment != '':
-        output.comment = '_'+output.comment
+    output.priors = priors
+    output.starparams = rundict['star_params']
+    output.datadict = datadict.copy()
+    output.priordict = priordict.copy()
+    output.fixeddict = fixeddict.copy()
 
     if rank == 0:
         # Print run time
@@ -137,6 +139,8 @@ def runpoly(configfile, nlive=None, nplanets=None, modelargs={}, **kwargs):
 
         # Copy post processing script to this run's folder
         copy(os.path.join(HOME,'run/post_processing.py'), os.path.join(output.base_dir, '..'))
+
+        # TODO Copy model file to this run's folder
 
     return output
 

@@ -45,8 +45,8 @@ def read_config(configfile, nplanets=None):
     # Create prior instances
     priordict = prior_constructor(input_dict, {})
 
-    # Build list of parameter names
-    # parnames, fixparnames = get_parnames(input_dict)
+    # Build list of parameter names and priors
+    priors = read_priors(input_dict)
 
     # Read data from file(s)
     read_data(c.datadict)
@@ -54,7 +54,7 @@ def read_config(configfile, nplanets=None):
     # Fixed parameters
     fixedpardict = get_fixedparvalues(input_dict)
 
-    return rundict, datadict, priordict, fixedpardict
+    return rundict, datadict, priordict, fixedpardict, priors
 
 
 def get_parnames(input_dict):
@@ -91,3 +91,33 @@ def read_data(datadict):
                            comment='#', skiprows=[1, ])
         datadict[inst]['data'] = data
     return
+
+
+def read_priors(input_dict):
+    """ Reads the input dict and return a dictionary with all parameters and
+    their respective priors. """
+
+    priors = {}
+    
+    # Iteration over all parameter objects
+    for objkey in input_dict.keys():
+
+        # Iteration over all parameters of a given object
+        for parkey in input_dict[objkey]:
+
+            parlist = input_dict[objkey][parkey]
+
+            if not isinstance(parlist, list):
+                continue
+
+            # If parameter does not jump, or is marginalised skip this element
+            if parlist[1] == 0:
+                continue
+
+            # Construct prior instance with information on dictionary
+            priortype = parlist[2][0]
+            pars = parlist[2][1:]
+            
+            priors[objkey+'_'+parkey] = f'{priortype}: {pars}'
+
+    return priors
