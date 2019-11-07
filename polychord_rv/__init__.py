@@ -4,7 +4,7 @@ import numpy as np
 import importlib
 import datetime
 import time
-from shutil import copy
+import shutil
 
 # MPI imports
 from mpi4py import MPI
@@ -34,7 +34,7 @@ def runpoly(configfile, nlive=None, nplanets=None, modelargs={}, **kwargs):
     mod = importlib.import_module(modulename) # modulename, models_path)
 
     # Instantiate model class (pass additional arguments)
-    mymodel = mod.Model(fixeddict, datadict, priordict, **modelargs)
+    mymodel = mod.Model(fixeddict, datadict, parnames, **modelargs)
 
     # Function to convert from hypercube to physical parameter space
     def prior(hypercube):
@@ -126,9 +126,9 @@ def runpoly(configfile, nlive=None, nplanets=None, modelargs={}, **kwargs):
     output.ncores = size
     output.priors = priors
     output.starparams = rundict['star_params']
-    output.datadict = datadict.copy()
-    output.priordict = priordict.copy()
-    output.fixeddict = fixeddict.copy()
+    output.datadict = datadict
+    output.parnames = parnames
+    output.fixeddict = fixeddict
 
     if rank == 0:
         # Print run time
@@ -138,9 +138,11 @@ def runpoly(configfile, nlive=None, nplanets=None, modelargs={}, **kwargs):
         dump2pickle_poly(output)
 
         # Copy post processing script to this run's folder
-        copy(os.path.join(HOME,'run/post_processing.py'), os.path.join(output.base_dir, '..'))
+        shutil.copy(os.path.join(HOME,'run/post_processing.py'), os.path.join(output.base_dir, '..'))
 
-        # TODO Copy model file to this run's folder
+        # Copy model file to this run's folder
+        model = os.path.join(models_path, modulename+'.py')
+        shutil.copy(model, os.path.join(output.base_dir, '..'))
 
     return output
 
