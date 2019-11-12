@@ -28,7 +28,7 @@ def runpoly(configfile, nlive=None, nplanets=None, modelargs={}, **kwargs):
     parnames = list(priordict.keys())
 
     # Import model module
-    models_path = os.path.join(os.getenv('HOME'), 'run/targets/{target}/models/{runid}'.format(**rundict))
+    models_path = os.path.join(HOME, 'run/targets/{target}/models/{runid}'.format(**rundict))
     modulename = 'model_{target}_{runid}'.format(**rundict)
     sys.path.insert(0, models_path)
     mod = importlib.import_module(modulename) # modulename, models_path)

@@ -1,4 +1,6 @@
-import imp
+import sys
+import os
+import importlib
 import numpy as np
 import pandas as pd
 from .priors import prior_constructor
@@ -12,7 +14,10 @@ def read_config(configfile, nplanets=None):
     """
 
     # Import configuration file as module
-    c = imp.load_source('c', configfile)
+    configpath = os.path.split(configfile)[0]
+    file_name = os.path.split(configfile)[1][:-3]
+    sys.path.insert(0, configpath)
+    c = importlib.import_module(file_name)
 
     # Make copy of all relavant dictionaries
     rundict, input_dict, datadict = map(dict.copy, c.configdicts)
