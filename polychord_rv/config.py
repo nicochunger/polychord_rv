@@ -30,8 +30,9 @@ def read_config(configfile, nplanets=None):
 
     if rundict['nplanets'] != None:
         nplanets = rundict['nplanets']
-        assert nplanets == num_planet_dicts, "Number of planets is {}, but there are {} planet dicts".format(
-            nplanets, num_planet_dicts)
+        assert nplanets == num_planet_dicts, (f"Number of planets is {nplanets}, " 
+                                              f"but there are {num_planet_dicts} "
+                                               "planet dicts")
     elif nplanets == None:
         raise AssertionError("Number of planets is not defined.")
     else:
