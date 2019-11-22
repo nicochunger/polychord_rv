@@ -44,9 +44,12 @@ def runpoly(configfile, nlive=None, nplanets=None, modelargs={}, **kwargs):
             theta.append(priordict[parnames[i]].ppf(x))
         return theta    
 
+    
     # LogLikelihood
     def loglike(x):
+        loglike.nloglike += 1
         return (mymodel.lnlike(x), [])
+    loglike.nloglike = 0 # Likelihood calculations counter
 
     # Prepare run
     nderived = 0
@@ -102,35 +105,39 @@ def runpoly(configfile, nlive=None, nplanets=None, modelargs={}, **kwargs):
     output = polychord.run_polychord(loglike, ndim, nderived, settings, prior)
     # --------------------------
 
+    # Gather all the number of likelihood calculations
+    nlog = comm.gather(loglike.nloglike, root=0)
+    
     # Stop clock
     tf = time.process_time()
     run_time = datetime.timedelta(seconds=tf-ti)
 
-    # Cleanup of parameter names
-    paramnames = [(x, x) for x in parnames]
-    output.make_paramnames_files(paramnames)
-    parnames.insert(0, 'loglike')
-    parnames.insert(0, 'weight')
-    old_cols = output.samples.columns.values.tolist()
-    output.samples.rename(columns=dict(zip(old_cols, parnames)), inplace=True)
-
-    # Assign additional parameters to output
-    output.runtime = run_time
-    output.target = rundict['target']
-    output.runid = rundict['runid']
-    output.comment = rundict.get('comment', '')
-    output.nplanets = mymodel.nplanets
-    output.nlive = settings.nlive
-    output.nrepeats = settings.num_repeats
-    output.isodate = isodate
-    output.ncores = size
-    output.priors = priors
-    output.starparams = rundict['star_params']
-    output.datadict = datadict
-    output.parnames = parnames
-    output.fixeddict = fixeddict
-
     if rank == 0:
+        # Cleanup of parameter names
+        paramnames = [(x, x) for x in parnames]
+        output.make_paramnames_files(paramnames)
+        parnames.insert(0, 'loglike')
+        parnames.insert(0, 'weight')
+        old_cols = output.samples.columns.values.tolist()
+        output.samples.rename(columns=dict(zip(old_cols, parnames)), inplace=True)
+
+        # Assign additional parameters to output
+        output.runtime = run_time
+        output.target = rundict['target']
+        output.runid = rundict['runid']
+        output.comment = rundict.get('comment', '')
+        output.nplanets = mymodel.nplanets
+        output.nlive = settings.nlive
+        output.nrepeats = settings.num_repeats
+        output.isodate = isodate
+        output.ncores = size
+        output.priors = priors
+        output.starparams = rundict['star_params']
+        output.datadict = datadict
+        output.parnames = parnames
+        output.fixeddict = fixeddict
+        output.nloglike = np.sum(nlog)
+
         # Print run time
         print('\nTotal run time was: {}'.format(run_time))
 
