@@ -38,7 +38,11 @@ def runpoly(configfile, nlive=None, nplanets=None, modelargs={}, **kwargs):
 
     # Function to convert from hypercube to physical parameter space
     def prior(hypercube):
-        """ Priors for each parameter. """
+        """ 
+        Convert a point in the unit hypercube to the physical parameters using
+        their respective priors. 
+        """
+
         theta = []
         for i, x in enumerate(hypercube):
             theta.append(priordict[parnames[i]].ppf(x))
@@ -47,7 +51,11 @@ def runpoly(configfile, nlive=None, nplanets=None, modelargs={}, **kwargs):
     
     # LogLikelihood
     def loglike(x):
-        loglike.nloglike += 1
+        """ 
+        Calculates de logarithm of the Likelihood given the parameter vector x. 
+        """
+
+        loglike.nloglike += 1 # Add one to the likelihood calculations counter
         return (mymodel.lnlike(x), [])
     loglike.nloglike = 0 # Likelihood calculations counter
 
@@ -69,12 +77,12 @@ def runpoly(configfile, nlive=None, nplanets=None, modelargs={}, **kwargs):
     if nlive is None:
         settings.nlive = 25*ndim
     else:
-        settings.nlive = nlive
+        settings.nlive = nlive*ndim
 
     # Define fileroot name (identifies this specific run)
     fileroot = rundict['target']+'_'+rundict['runid']
     if rundict['comment'] != '':
-        fileroot += '_'+rundict['comment']
+        fileroot += '-' + rundict['comment']
 
     # Label the run with nr of planets, live points, nr of cores, sampler and date
     fileroot += '_k{}'.format(mymodel.nplanets)
@@ -105,13 +113,16 @@ def runpoly(configfile, nlive=None, nplanets=None, modelargs={}, **kwargs):
     output = polychord.run_polychord(loglike, ndim, nderived, settings, prior)
     # --------------------------
 
-    # Gather all the number of likelihood calculations
-    nlog = comm.gather(loglike.nloglike, root=0)
-    
-    # Stop clock
+    # Stop clocks
     tf = time.process_time()
-    run_time = datetime.timedelta(seconds=tf-ti)
+    # Reduce clocks to min and max to get actual wall time
+    ti = comm.reduce(ti, op=MPI.MIN, root=0)
+    tf = comm.reduce(tf, op=MPI.MAX, root=0)
 
+    # Gather all the number of likelihood calculations and sum to get total
+    nlog = comm.reduce(loglike.nloglike, op=MPI.SUM, root=0)
+
+    # Save results
     if rank == 0:
         # Cleanup of parameter names
         paramnames = [(x, x) for x in parnames]
@@ -122,7 +133,7 @@ def runpoly(configfile, nlive=None, nplanets=None, modelargs={}, **kwargs):
         output.samples.rename(columns=dict(zip(old_cols, parnames)), inplace=True)
 
         # Assign additional parameters to output
-        output.runtime = run_time
+        output.runtime = datetime.timedelta(seconds=tf-ti)
         output.target = rundict['target']
         output.runid = rundict['runid']
         output.comment = rundict.get('comment', '')
@@ -136,10 +147,10 @@ def runpoly(configfile, nlive=None, nplanets=None, modelargs={}, **kwargs):
         output.datadict = datadict
         output.parnames = parnames
         output.fixeddict = fixeddict
-        output.nloglike = np.sum(nlog)
+        output.nloglike = nlog
 
         # Print run time
-        print('\nTotal run time was: {}'.format(run_time))
+        print('\nTotal run time was: {}'.format(output.runtime))
 
         # Save output as pickle file
         dump2pickle_poly(output)
